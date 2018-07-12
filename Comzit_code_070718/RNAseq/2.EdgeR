@@ -1,0 +1,291 @@
+#http://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf
+
+- Aligning reads to a genome: align the raw sequence reads to a reference genome. Bowtie-TopHat-htseq pipeline
+- count read
+- Reading the counts from a file. If the table of counts has been written to a file, then the first step in any analysis will usually be
+to read these counts into an R session. read.delim().
+
+> setwd(getwd()) # set here as a working dir
+
+#generating RAW read counts table
+> filenames <- list.files(path = getwd(), pattern = "*\\.bamfeatureCounts_$", full.names = TRUE)
+## OR
+> filenames <- list.files(path = getwd(),  full.names = TRUE)
+
+len=length(filenames)
+for (i in 1:len) {
+	print (i)
+	if (i ==1) {
+	table1=read.table(file=filenames[i], header=TRUE)  # header=TRUE
+	table1=data.frame(table1)
+	table2=table1[,c(1,7)]  
+	colnames(table2)=c(colnames(table1)[1],colnames(table1)[7])
+  	}
+  	else {
+  	table_temp=read.table(file=filenames[i], header=TRUE)
+  	table_temp=data.frame(table_temp)
+  	table2[,i+1]=table_temp[,7]
+  	colnames(table2)[i+1]=colnames(table_temp)[7]
+  	rm(table_temp)
+  	}
+  	}
+  	return (table2)
+write.csv(table2, file = "Reads.csv") 
+
+################################## combining read counts into one excel table Version2.0
+#########using Rstudio###############
+filenames <- list.files(path = getwd(),  full.names = TRUE)
+
+len=length(filenames)
+for (i in 1:len) {
+  print (i)
+  if (i ==1) {
+    table1=read.table(file=filenames[i], header=FALSE)
+    table1=data.frame(table1)
+    table2=table1
+    rownames(table2)=table2[,1]
+    table2$V1<-NULL
+    colnames(table2)[i]=unlist(strsplit(filenames[i],split="/"))[15]   #unlist(strsplit(filenames[1],split="/"))[15]
+  }
+  else {
+    table_temp=read.table(file=filenames[i], header=FALSE)
+    table_temp=data.frame(table_temp)
+    table2[,i]=table_temp[,2]
+    colnames(table2)[i]=unlist(strsplit(filenames[i],split="/"))[15] 
+    rm(table_temp)
+  }
+}
+return (table2)
+write.csv(table2, file = "Reads_Ovary_day3_v8.5_htseq.csv") 
+######################################################################3
+
+
+
+- The DGEList data class
+library(edgeR)
+#read table
+#rawdata <- read.delim("TableS1.txt", check.names=FALSE, stringsAsFactors=FALSE)
+rawdata <- read.csv("cBR_W_G_RG_reads.csv", header= TRUE, check.names=FALSE, stringsAsFactors=FALSE)
+#cBR_W_G_RG_reads.csv
+#FB_W_G_RG_reads.csv
+#OV_W_G_RG_reads.csv
+head(rawdata)
+#edgeR stores data in a simple list-based data object called a DGEList. 
+yW_G <- DGEList(counts=rawdata[,2:9], genes=rawdata[,1])
+yG_RG <- DGEList(counts=rawdata[,6:13], genes=rawdata[,1])
+yW_RG <- DGEList(counts=cbind(rawdata[,2:5],rawdata[,10:13]), genes=rawdata[,1])
+
+#annotation
+Skipped
+
+#Filtering and normalization: Different RefSeq transcripts for the same gene symbol count predominantly the same reads. 
+#So we keep one transcript for each gene symbol. We choose the transcript with highest overall count:
+#may be also skipped??????
+> o <- order(rowSums(y$counts), decreasing=TRUE)
+> y <- y[o,]
+> d <- duplicated(y$genes$Symbol)
+> y <- y[!d,]
+> nrow(y) # got zero here 
+
+### 
+
+
+#Filter low number reads:We filter out lowly expressed genes using the following commands:
+#a CPM of 1 corresponds to a count of 6-7 in the smallest sample.
+#Usually a gene is required to have a count of 5-10 in a library to be considered expressed in that library. 
+#Users should also filter with count-per-million (CPM) rather than filtering on the counts directly, as the
+#latter does not account for differences in library sizes between samples.
+# Since this experiment has 4 replicates for each condition, a gene should be
+#expressed in at least 4 samples if it responds to at least one condition. Hence we keep genes
+#with at least 1 counts per million (CPM) in at least 4 samples:
+keep <- rowSums(cpm(yW_G)>1) >= 4
+table(keep)
+yW_G <- yW_G[keep, ,keep.lib.sizes=FALSE] #error two subscripts required
+yW_G <- yW_G[keep, keep.lib.sizes=FALSE] #error two subscripts required
+
+#TMM normalization is applied to this dataset to account for compositional difference between the libraries.
+yW_G <- calcNormFactors(yW_G)
+yW_RG <- calcNormFactors(yW_RG)
+yG_RG <- calcNormFactors(yG_RG)
+yW_G$samples
+yW_RG$samples 
+yG_RG$samples
+
+#Data exploration: The first step of an analysis should be to examine the samples for outliers and for other relationships. 
+#The function plotMDS produces a plot in which distances between samples correspond to leading biological coefficient of variation (BCV) between those samples:
+png(filename="Rplot_OV_MDS_W_G.png")
+plotMDS(yW_G)
+dev.off()
+png(filename="Rplot_OV_MDS_W_RG.png")
+plotMDS(yW_RG)
+dev.off()
+png(filename="Rplot_OV_MDS_G_RG.png")
+plotMDS(yG_RG)
+dev.off()
+
+#design matrix based on experimental design:
+#Before we fit negative binomial GLMs, we need to define our design matrix based on the experimental design. 
+#Here we want to test for differential expression between tumour and normal #tissues within patients, 
+#i.e. adjusting for differences between patients. In statistical terms, this is
+# an additive linear model with patient as the blocking factor:
+#> AntID <- factor(c("W1","W2","W3","W4","G1","G2","G3","G4")) 
+#,"RG1","RG2","RG3","RG4"))
+CastesW_G <- factor(c("W","W","W","W","G","G","G","G"))
+data.frame(Sample=colnames(yW_G),CastesW_G)
+#data.frame(Sample=colnames(yW_G),group)
+#designW_G <- model.matrix(~group)
+designW_G <- model.matrix(~CastesW_G)
+rownames(designW_G) <- colnames(yW_G)
+designW_G
+
+CastesW_RG <- factor(c("W","W","W","W","RG","RG","RG","RG"))
+data.frame(Sample=colnames(yW_RG),CastesW_RG)
+designW_RG <- model.matrix(~CastesW_RG)
+rownames(designW_RG) <- colnames(yW_RG)
+designW_RG
+
+CastesG_RG <- factor(c("G","G","G","G","RG","RG","RG","RG"))
+data.frame(Sample=colnames(yG_RG),CastesG_RG)
+designG_RG <- model.matrix(~CastesG_RG)
+rownames(designG_RG) <- colnames(yG_RG)
+designG_RG
+
+
+#Dispersion estimation
+install.packages("statmod")
+library(statmod)
+yW_G <- estimateDisp(yW_G, designW_G, robust=TRUE)
+yW_G$common.dispersion
+#cBR,FB,OV
+ #0.04593714, FB0.09183209, OV 0.08616548
+#filtered data (removed lowly expressed genes) 
+#0.0445135
+yW_RG <- estimateDisp(yW_RG, designW_RG, robust=TRUE)
+yW_RG$common.dispersion
+#0.04870308,FB 0.1638666, ov 0.1564844
+yG_RG <- estimateDisp(yG_RG, designG_RG, robust=TRUE)
+yG_RG$common.dispersion
+#0.02033429, FB 0.1819035, ov  0.09665029
+
+png(filename="Rplot_OV_BCV_W_G.png")
+plotBCV(yW_G)
+dev.off()
+png(filename="Rplot_OV_BCV_W_RG.png")
+plotBCV(yW_RG)
+dev.off() 
+png(filename="Rplot_OV_BCV_G_RG.png")
+plotBCV(yG_RG)
+dev.off()
+
+#differential expression
+#exact test
+group <- c("w","w","w","w","g","g","g","g")
+yW_G <- DGEList(counts=yW_G, group=group)
+yW_G <- estimateDisp(yW_G)
+yW_G <- estimateCommonDisp(yW_G)
+yW_G <- estimateTagwiseDisp(yW_G)
+yW_G_exact <- exactTest(yW_G)
+topTags(yW_G_exact)
+
+#glm
+fitW_G <- glmFit(yW_G, designW_G)
+lrtW_G <- glmLRT(fitW_G)
+topTags(lrtW_G)
+output=data.frame();output<-lrtW_G$genes
+output=cbind(output,lrtW_G$table);output=cbind(output,lrtW_G$prior.df);output=cbind(output,lrtW_G$AveLogCPM);output=cbind(output,lrtW_G$comparison);output=cbind(output,lrtW_G$df.test);
+dim(output)
+####
+write.csv(output, "/ifs/home/co635/RNAseq/cBr_lrt_W_G_filteredLowCPM.csv")# export DEG list
+write.csv(topTags(lrtW_G), "/ifs/home/co635/RNAseq/cBr_lrt_W_G_TopTag_filteredLowCPM.csv")# export DEG list
+####
+#Here’s a closer look at the counts-per-million in individual samples for the top genes:
+o <- order(lrtW_G$table$PValue)
+#cpm(yW_G)[o,]
+CPM_W_G=data.frame(cpm(yW_G))
+CPM_W_G=cbind(CPM_W_G, lrtW_G$genes)
+write.csv(CPM_W_G, "/ifs/home/co635/RNAseq/OV_lrt_W_G_CPM.csv")# export DEG list
+png(filename="Rplot_OV_Smear_W_G.png")
+# plotMD(lrt) does not work 
+plotSmear(lrtW_G)
+abline(h=c(-1, 1), col="blue")
+dev.off()
+
+
+fitW_RG <- glmFit(yW_RG, designW_RG)
+lrt <- glmLRT(fitW_RG)
+topTags(lrt)
+output=data.frame();output<-lrt$genes
+output=cbind(output,lrt$table);output=cbind(output,lrt$prior.df);output=cbind(output,lrt$AveLogCPM);output=cbind(output,lrt$comparison);output=cbind(output,lrt$df.test);
+dim(output)
+####
+write.csv(output, "/ifs/home/co635/RNAseq/OV_lrt_W_RG.csv")# export DEG list
+####
+#Here’s a closer look at the counts-per-million in individual samples for the top genes:
+#o <- order(lrt$table$PValue);cpm(yW_RG)[o,]
+CPM_W_RG=data.frame(cpm(yW_RG));CPM_W_RG=cbind(CPM_W_RG, lrt$genes)
+####
+write.csv(CPM_W_RG, "/ifs/home/co635/RNAseq/OV_lrt_W_RG_CPM.csv")# export DEG list
+png(filename="Rplot_OV_Smear_W_RG.png")
+#####
+# plotMD(lrt) does not work 
+plotSmear(lrt)
+abline(h=c(-1, 1), col="blue")
+dev.off()
+
+fitG_RG <- glmFit(yG_RG, designG_RG)
+lrt <- glmLRT(fitG_RG)
+topTags(lrt)
+output=data.frame();output<-lrt$genes
+output=cbind(output,lrt$table);output=cbind(output,lrt$prior.df);output=cbind(output,lrt$AveLogCPM);output=cbind(output,lrt$comparison);output=cbind(output,lrt$df.test);dim(output)
+####
+write.csv(output, "/ifs/home/co635/RNAseq/OV_lrt_G_RG.csv")# export DEG list
+####
+#Here’s a closer look at the counts-per-million in individual samples for the top genes:
+#o <- order(lrt$table$PValue); cpm(yG_RG)[o,]
+CPM_G_RG=data.frame(cpm(yG_RG))
+CPM_G_RG=cbind(CPM_G_RG, lrt$genes)
+####
+write.csv(CPM_G_RG, "/ifs/home/co635/RNAseq/OV_lrt_G_RG_CPM.csv")# export DEG list
+png(filename="Rplot_OV_Smear_G_RG.png")
+#####
+# plotMD(lrt) does not work 
+plotSmear(lrt);abline(h=c(-1, 1), col="blue")
+dev.off()
+
+
+
+- Filtering: Genes with very low counts provide little evidence for differential expression. filter with count-per-million (CPM) rather than filtering on the counts directly 
+
+- Normalization: edgeR is concerned with differential expression analysis rather than with the quantification of
+expression levels. It is concerned with relative changes in expression levels between conditions,
+but not directly with estimating absolute expression levels. 
+####################
+#All three together
+#@@@@@@@@
+rawdata <- read.csv("OV_W_G_RG_reads.csv", header= TRUE, check.names=FALSE, stringsAsFactors=FALSE)
+head(rawdata)
+yW_G_RG <- DGEList(counts=rawdata[,2:13], genes=rawdata[,1])
+yW_G_RG <- calcNormFactors(yW_G_RG)
+yW_G_RG$samples
+#@@@@@@@@@
+png(filename="Rplot_OV_MDS_W_G_RG.png")
+plotMDS(yW_G_RG)
+dev.off()
+Castes <- factor(c("W","W","W","W","G","G","G","G","RG","RG","RG","RG"))
+data.frame(Sample=colnames(yW_G_RG),Castes)
+design <- model.matrix(~Castes)
+rownames(design) <- colnames(yW_G_RG)
+design
+yW_G_RG <- estimateDisp(yW_G_RG, design, robust=TRUE)
+yW_G_RG$common.dispersion
+#@@@@@@@@
+png(filename="Rplot_OV_BCV_W_G_RG.png")
+plotBCV(yW_G_RG)
+dev.off()
+
+CPM_W_G_RG=data.frame(cpm(yW_G_RG))
+CPM_W_G_RG=cbind(CPM_W_G_RG, yW_G_RG$genes)
+####@@@@@@@@
+write.csv(CPM_W_G_RG, "/ifs/home/co635/RNAseq/OV_W_G_RG_CPM.csv")# export DEG list
+
+

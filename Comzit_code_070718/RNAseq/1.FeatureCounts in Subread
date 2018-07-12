@@ -1,0 +1,47 @@
+- Producing a table of read counts: edgeR works on a table of integer read counts, with rows corresponding to genes and columns to
+independent libraries.
+	-featureCounts function of the Rsubread package.
+	-Python software htseq-counts.
+
+# module load subread/1.4.6-p3
+# featureCounts -T 5 -a /ifs/home/co635/Ref/hsal_v8.5.gtf -o output /ifs/home/co635/RNAseq/CentralBrain_Worker_rep1Aligned.sortedByCoord.out.bam
+
+## FeatureCounts.sh
+---------------------------------------------------------------------------------------------------------------------------------
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+module load subread/1.4.6-p3
+GTF_file=/ifs/home/co635/Ref/hsal_v8.5.gtf
+output=featureCounts_
+Input =/ifs/home/co635/RNAseq/Bam_files_Brain/CentralBrain_Worker_rep1Aligned.sortedByCoord.out.bam
+
+for Input in *.bam; do
+    echo $Input
+    featureCounts -T 20 -a ${GTF_file} -o ${Input}$output $Input -t CDS 
+    #featureCounts -T 20 -a ${GTF_file} -o ${Input}$output $Input --isGTFAnnotationFile=TRUE --GTF.featureType="CDS" --useMetaFeatures=TRUE --allowMultiOverlap=FALSE --isPairedEnd=FALSE
+ done
+ 
+ #in R:  result_counts <- featureCounts(bam_files_vec, annot.ext= refseq_anno, isGTFAnnotationFile=TRUE, GTF.featureType="CDS", GTF.attrType="gene_id", useMetaFeatures=TRUE, allowMultiOverlap=FALSE, isPairedEnd=FALSE)	
+---------------------------------------------------------------------------------------------------------------------------------
+ 
+#qsub FeatureCounts.sh 
+ 
+ 
+    
+
+
+
+
+
+
+
+
+
+
+
+> source("https://bioconductor.org/biocLite.R")
+> biocLite("Rsubread")
+> featureCounts(BAM_files,annot.ext=GTF_file,isGTFAnnotationFile=TRUE,GTF.featureType="exon",GTF.attrType="gene_id",chrAliases=NULL,
+isPairedEnd=FALSE,nthreads=10)
+

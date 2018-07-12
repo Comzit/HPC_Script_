@@ -1,0 +1,178 @@
+###NOTE_GM_RNAseq_brain_Day10#######
+
+1)Gunzip *.gz
+scp Downloads/*.gz co635@phoenix.med.nyu.edu:GM_RNAseq/Brain/Day10
+gunzip *.gz
+
+2) Making indexes Bowties2
+scp Downloads/hsal_v8.5.fasta co635@phoenix.med.nyu.edu:Ref/
+module load bowtie2/2.3.1
+mkdir Bowtie2Index_v8.5
+reference=/ifs/home/co635/Ref/hsal_v8.5.fasta
+reference_index=/ifs/home/co635/Ref/Bowtie2Index_v8.5/hsal_genome_v8.5_bowtie2
+bowtie2-build ${reference} ${reference_index}
+
+
+3) Alignment with Tophat
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+module load bowtie2/2.3.1
+module load tophat/2.1.1
+GTF_file=/ifs/home/co635/Ref/hsal_v8.5.gtf
+Bowtie2index_files=/ifs/home/co635/Ref/Bowtie2Index_v8.5/hsal_genome_v8.5_bowtie2
+output=tophat_hsal_v8.5
+
+#taking files from this directory
+cd /ifs/home/co635/GM_RNAseq/Brain/Day10
+
+for Input_fasta in *.fastq; do
+    echo $Input_fasta
+    tophat --no-coverage-search -p 8 -G ${GTF_file} -o $output${Input_fasta}tophat ${Bowtie2index_files} $Input_fasta
+    samtools sort ${output}${Input_fasta}tophat/accepted_hits.bam ${output}${Input_fasta}tophat/accepted_hits.sorted
+    samtools index ${output}${Input_fasta}tophat/accepted_hits.sorted.bam
+done
+
+######For loop  ver2.0
+for dir in */;do
+    echo $dir
+    cd $dir
+    gunzip *.gz  #unzip all fasta files in the current directory
+    for Input_fasta in *.fastq; do
+		echo $Input_fasta
+		tophat --no-coverage-search -p 8 -G ${GTF_file} -o $output${Input_fasta}tophat ${Bowtie2index_files} $Input_fasta
+		samtools sort ${output}${Input_fasta}tophat/accepted_hits.bam ${output}${Input_fasta}tophat/accepted_hits.sorted
+		samtools index ${output}${Input_fasta}tophat/accepted_hits.sorted.bam
+    done
+    cd ..
+done    
+####################3    
+
+
+4) cufflink & python HTSeq
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+module load cufflinks/2.2.1
+module load python/3.5.3
+python -m pip install --user numpy scipy matplotlib ipython jupyter pandas sympy nose
+pip install --user --upgrade pip
+pip install --user HTSeq
+cd /ifs/home/co635/GM_RNAseq/Brain/Day10
+GTF_file=/ifs/home/co635/Ref/hsal_v8.5.gtf
+for tophat_dir in */; do
+    echo $tophat_dir
+    cd $tophat_dir
+    cufflinks accepted_hits.bam > cufflinksResult
+    python -m HTSeq.scripts.count --format bam --idattr gene_id accepted_hits.bam ${GTF_file} > HTSeq_count_hsal.txt
+    Current_dir=${tophat_dir%$'/'}
+    cp /ifs/home/co635/GM_RNAseq/Brain/Day10/${tophat_dir}/HTSeq_count_hsal.txt /ifs/home/co635/GM_RNAseq/Brain/Day10/${Current_dir}_HTSeq_count_hsal.txt
+done
+
+#download all the read number table (HTSeq_count_hsal.txt)
+#terminal on local computer
+scp co635@phoenix.med.nyu.edu:/ifs/home/co635/GM_RNAseq/Brain/Day10/*HTSeq_count_hsal.txt .
+
+############################################
+#generate table for all reads (W1-5, G1-5)
+
+$ R
+> PATH_here=getwd()
+> library(gdata)   
+> W1_Brain_D10 = read.table("tophat_hsal_v8.5H57VTBCX2_l01n01_d10_w1_br.351000000b88b0.fastqtophat_HTSeq_count_hsal.txt",header=T,col.names=c("GeneID","Reads"))
+> W2_Brain_D10 = read.table(Text_files[1],header=T,col.names=c("GeneID","Reads"))
+
+head(W1_Brain_D10)
+> Text_files <- list.files(path=PATH_here, pattern="*.txt", full.names=T, recursive=FALSE)
+> MYtextFiles = lapply(Text_files, read.csv)
+
+READs=matrix(nrow=20663,ncol=10)
+colnames(READs) <- c("W1","W2","W3","W4","W5","G1","G2","G3","G4","G5")
+NUM=length(Text_files)
+for (i in 1:NUM)
+{
+print (i)
+LIST<- read.table(Text_files[i],header=T,col.names=c("GeneID","Reads"))
+row.names(READs)=LIST[,1]
+READs[,i]=LIST[,2]
+}
+write.csv(READs, file = "Day10_Brain_reads.csv")
+#download to local
+scp co635@phoenix.med.nyu.edu:/ifs/home/co635/GM_RNAseq/Brain/Day10/Day10_Brain_reads.csv .
+
+
+#producing three output files
+#ls Tophat2_Alignment
+#less transcripts.gtf
+#less genes.fpkm_tracking
+#less isoforms.fpkm_tracking
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5) counting by Rsubread
+# Build an index for the artificial sequence included in file 'reference.fa'.
+library(Rsubread)
+ref <- system.file("extdata","reference.fa",package="Rsubread")
+buildindex(basename="./reference_index",reference=ref)
+
+
+library(Rsubread)
+filesToCount <- dir("bam", pattern=".bam$", full.names=T)
+tmp <- featureCounts(filesToCount, annot.inbuilt="hg19", ignoreDup=F)
+save(tmp, file="../Day3/countMatrix.RData")
+
+
+5) HTSeq (python, run on commnadline)
+
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+module load python/3.5.3
+python -m pip install --user numpy scipy matplotlib ipython jupyter pandas sympy nose
+pip install --user --upgrade pip
+pip install --user HTSeq
+#cd /ifs/home/co635/GM_RNAseq/Brain/Day10
+cd /ifs/home/co635/RNAseq/GM_RNAseq/180110_fastaFiles_FromNikos /Day3/
+for dir in */;do
+	echo $dir
+    cd $dir  #Day3_Br
+    i=0
+	for tophat_dir in */; do
+    	echo $tophat_dir
+    	cd $tophat_dir
+    	$i=$i+1
+    	echo $i
+    	#htseq-count --format bam --stranded yes --idattr gene_id accepted_hits.bam transcripts.gtf >> ${tophat_dir}_HTseqCount.txt
+    	#htseq-count accepted_hits.bam transcripts.gtf > HTseqCount.txt
+    	#python -m HTSeq.scripts.count --format bam --stranded no --idattr gene_id accepted_hits.bam transcripts.gtf
+    	#python -m HTSeq.scripts.count --format bam --idattr gene_id accepted_hits.bam /ifs/home/co635/Ref/hsal_v8.5.gtf > HTSeq_count_hsal.txt
+    	cd ..
+	done
+	cd ..
+done
+#########################
+
+
+
+htseq-count [options] <alignment_SAM_files> <gff_file>
+
+
+for tophat_dir in */; do
+	cd $tophat_dir
+	mv HTSeq_count_hsal.txt /ifs/home/KerbosID/..../
+	cd ..
+done
+
+
+	

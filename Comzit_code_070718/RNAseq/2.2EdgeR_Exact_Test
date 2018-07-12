@@ -1,0 +1,96 @@
+
+setwd(getwd())
+library(edgeR)
+#filename_input="Reads_cBr_Nico_CDS_MetaLevels.csv"
+filename_input="cBR_W_G_RG_reads.csv"
+rawdata <- read.csv(filename_input, header= TRUE, check.names=FALSE, stringsAsFactors=FALSE)
+apply(rawdata[,2:9],2,sum)
+apply(rawdata[,7:16],2,sum) #ovary day10
+apply(rawdata[,17:26],2,sum) #ovary day3
+# W1      W2      W3      W4      G1      G2      G3      G4  #comzit
+#5041088 1535934 4053702 1357137 1791414 1682772 1822262 1776323 
+apply(rawdata,2,sum)
+#  Wrep1   Wrep2   Wrep3   Wrep4   Grep1   Grep2   Grep3   Grep4 # Nicolas
+#5038964 1535322 4051951 1356590 1790790 1682104 1821583 1775690 
+apply(rawdata[,c(3,4,5,6,7,12,13,14)],2,sum)  # Nicolas_featureCounts_parameters
+#CentralBrain_Worker_rep1Aligned 5038964 
+#Centrarain_Gamergate_rep1Aligned 1790790 
+#Centrarain_Gamergate_rep2Aligned 1682104 
+#Centrarain_Gamergate_rep3Aligned 1821583 
+#Centrarain_Gamergate_rep4Aligned 1775690 
+#Centrarain_Worker_rep2Aligned 1535322 
+#Centrarain_Worker_rep3Aligned 4051951 
+#Centrarain_Worker_rep4Aligned 1356590 
+#Comparing and identify the different geneID row
+################
+ for(i in seq_len(nrow(test_mat))){
++ if(!(all(test_mat[i,] == rawdata[i,])))
++ cat(i,"\n")
++ }
+################3
+
+yW_G <- DGEList(counts=rawdata[,17:26], genes=rawdata[,1])
+conditions_vec= factor(c("G","G","G","G","G","W","W","W","W","W"))
+#yW_G <- DGEList(counts=rawdata[,c(3:7,12:14)],group = conditions_vec, genes=rawdata[,2])
+
+#filter low expressed genes
+keep <- rowSums(cpm(yW_G)>1) >= 2
+table(keep)
+#FALSE  TRUE REP=2
+# 6029 14630 
+#FALSE  TRUE Rep=4
+# 7409 13250 
+#FALSE  TRUE  #Nico_featureCounts parameters
+# 6028 14631
+#yW_G <- yW_G[keep, ,keep.lib.sizes=FALSE] #error two subscripts required
+yW_G <- yW_G[keep, keep.lib.sizes=FALSE] #error two subscripts required
+#y <- y[keep, , keep.lib.sizes=FALSE];
+#y <- calcNormFactors(y);
+#y_classic <- estimateDisp(y);
+
+#The calcNormFactors function normalizes for RNA composition by finding a set of scaling factors
+#for the library sizes that minimize the log-fold changes between the samples for most genes
+#The normalization factors of all the libraries multiply to unity. A normalization factor below
+#one indicates that a small number of high count genes are monopolizing the sequencing, causing
+#the counts for other genes to be lower than would be usual given the library size. As a result, the
+#library size will be scaled down, analogous to scaling the counts upwards in that library. Conversely,
+#a factor above one scales up the library size, analogous to downscaling the counts.
+yW_G <- calcNormFactors(yW_G)
+
+install.packages("statmod")
+library(statmod)
+CastesW_G <- factor(c("G","G","G","G","G","W","W","W","W","W"))
+#CastesW_G <- factor(c("W","G","G","G","G","W","W","W"))
+#exp_name_vec <- "Wrep1 Wrep2 Wrep3 Wrep4 Grep1 Grep2 Grep3 Grep4"
+#conditions_vec <- "1 1 1 1 2 2 2 2"
+
+data.frame(Sample=colnames(yW_G),CastesW_G)
+designW_G <- model.matrix(~CastesW_G)
+rownames(designW_G) <- colnames(yW_G)
+designW_G
+yW_G <- estimateDisp(yW_G, designW_G, robust=TRUE)
+yW_G$common.dispersion
+#filtered data (removed lowly expressed genes) 
+#0.0445135 #0.04593714  # with 2 replicates at filtering step
+#0.04576342  # with 4 replicates at filtering step
+#[1] 0.04576138 # Nico_featureCounts_paprameters
+#differential expression
+#exact test
+group <- c("G","G","G","G","G","W","W","W","W","W")
+#group <- c("w","g","g","g","g","w","w","w")
+
+yW_G_exact_test <- DGEList(counts=yW_G, group=group,genes=yW_G$genes)
+yW_G_exact_test <- estimateDisp(yW_G_exact_test)
+yW_G_exact_test <- estimateCommonDisp(yW_G_exact_test)
+yW_G_exact_test <- estimateTagwiseDisp(yW_G_exact_test)
+yW_G_exact <- exactTest(yW_G_exact_test)
+
+W_G_exact_sig_2FC <- decideTestsDGE(yW_G_exact, p.value=0.05,lfc=1)
+
+topTags_ouput=topTags(yW_G_exact, n=300000)
+#topTags(object, n=10, adjust.method="BH", sort.by="PValue", p.value=1)
+> dim(topTags_ouput)
+[1] 14630     5
+write.csv(yW_G_exact, "/ifs/home/co635/RNAseq/cBr_exact_W_G_filteredLowCPM.csv")# export DEG list
+write.csv(topTags_ouput, "/ifs/home/co635/RNAseq/cBr_exact_W_G_TopTag_all_filteredLowCPM1_rep2_041718.csv")# export DEG list
+write.csv(topTags_ouput, "GM_Fb_day3_EgdeR.csv")# export DEG list
