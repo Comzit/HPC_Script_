@@ -1,0 +1,28 @@
+###### 
+Step1. fastq qc (quality_control)
+	#There are two files needed for qsub.
+	$ qsub qc_submission.sh test.conf
+	#For .sh file, specify the number of fastq file on the line3 (#$ -t 1-10). This is for 10 input files.
+	#For .conf file, use the below command line to generate the test.conf file
+	#### for single/pair-end fastq
+	$ ls *fastq | xargs -I{} echo $PWD/{} > /ifs/home/co635/scripts_to_submit/quality_control/test.conf
+	### .sh file will call .pl and execute fastqc command inside .pl
+
+######
+Step2. filtering bad-quality reads (qc_filtering) using NGSQCToolKit_v2.3.3. The package is installed and loacted in /ifs/home/co635/programs. 
+	# singel-end and pair-end fastq files are treated differently for this step.
+	#There are two files needed for qsub.
+	$ qsub qc_filtering.sh test.conf
+	#For .sh file, specify the number of fastq file on the line3 (#$ -t 1-10). This is for 10 input files.
+	#For .conf file, use the below command line to generate the test.conf file
+	# this .conf contains parameters filtering reads with score>25 and 80%.
+	#### For single-end
+	$ ls *fastq | xargs -I{} echo $PWD/{}\;80\;25 > /ifs/home/co635/scripts_to_submit/qc_filtering/test.conf
+	#### for Pair-end fastq, this requires two input fastq files on each path.  
+	###For paired-end, two fastq files are combined into one path. #######manual script to generating .conf file for pair-end qsub.########
+	paired1 <- c()
+	paired2<- c()
+	percent <- 80
+	qual <- 25
+	to_write <- paste(paired1, paired2, percent, qual, sep=";")
+	write(to_write, file="myfile.conf", ncolumns=1)
