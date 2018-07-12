@@ -1,0 +1,2 @@
+ls *fastq | xargs -I{} echo $PWD/{} > /ifs/home/co635/scripts_to_submit/quality_control/test.conf
+
