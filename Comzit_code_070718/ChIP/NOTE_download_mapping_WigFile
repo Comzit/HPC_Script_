@@ -1,0 +1,145 @@
+
+# download all gz files in a directory from seq core
+wget --user reinberglab --password @reinberg5 -m --no-parent https://genome.med.nyu.edu/results/reinberglab/2018-runs/2018-03-06/fastq/
+wget --user reinberglab --password @reinberg5 -r -m --no-parent -A TE-1_S1_L00*_R*_00*.fastq.gz https://genome.med.nyu.edu/results/reinberglab/2018-runs/2018-03-06/fastq/
+
+#my samples are TE-1, 2, 3 and 4
+# combine 4 Fastq files into 1 files
+cat TE-1_S1_L00*_R1_001.fastq.gz > TE-1_S1_R1.fastq.gz
+cat TE-1_S1_L00*_R2_001.fastq.gz > TE-1_S1_R2.fastq.gz
+rm -rf TE-1_S1_L00*
+#cat /ifs/home/co635/ChIPseq/082417/CO_K4-5_5_S5_L001_R1_001.fastq.gz /ifs/home/co635/ChIPseq/082417/CO_K4-5_5_S5_L002_R1_001.fastq.gz /ifs/home/co635/ChIPseq/082417/CO_K4-5_5_S5_L003_R1_001.fastq.gz /ifs/home/co635/ChIPseq/082417/CO_K4-5_5_S5_L004_R1_001.fastq.gz > K4_5.fastq.gz  
+#separate each samples into different directory
+
+mkdir TE-1
+find . -name 'TE-1_S*' -exec mv -t /ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-1 {} +
+cd TE-1
+cat * > TE-1_K4.fastq.gz
+rm -f TE-1_S*.gz
+
+mkdir TE-2
+find . -name 'TE-2_S*' -exec mv -t /ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-2 {} +
+mkdir TE-3
+find . -name 'TE-3_S*' -exec mv -t /ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-3 {} +
+mkdir TE-4
+find . -name 'TE-4_S*' -exec mv -t /ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-4 {} +
+#combine all into one
+cat * > TE-1_K4.fastq.gz
+
+
+#######################
+#Mapping using Bowtie2 
+#align using Samtools (sort and remove duplicates)
+#output is sorted_filtered_bam files
+
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+module load bowtie2/2.3.1  #bowtie2 [options]* -x <bt2-idx> {-1 <m1> -2 <m2> | -U <r>} [-S <sam>]
+module load samtools/1.3 #samtools/0.1.19 #qloginsamtools/1.3
+#bowtie2 --local --threads 16 -x /ifs/home/oo386/EEDmt20/bam/Bowtie2Index/Hsa -U  fastq_path,filelist[[j]] | samtools view -q 30 -@ ", 16 ," -Sb - > ", bam_path,filelist[[j]],".bam"),collapse="")
+Bowtie2index_files=/ifs/home/co635/Ref/Bowtie2Index_v8.5/hsal_genome_v8.5_bowtie2
+
+#Specify the working directory FIRST
+Search_dir="/ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-3"
+#
+fastq_file=$(find ${Search_dir} -name '*fastq.gz') # find the fastq file name
+fastq_file_path=$(readlink -f ${fastq_file})  ## get the full directory
+bowtie2 --local -p 16 -x ${Bowtie2index_files} -U ${fastq_file_path} -S ${Search_dir}/output.fastq.gz.sam   #bowtie2 --local -p 16 -x ${Bowtie2index_files} -U TE-2_K4.fastq.gz | samtools view -q 30 -@ 16 -Sb > samtoolViewsOutput.bam
+samtools view -q 30 -@ 16 -Sb ${Search_dir}/output.fastq.gz.sam > ${Search_dir}/output.fastq.gz.bam
+#samtools view -@ 16 -Sb ${Search_dir}/output.fastq.gz.sam > ${Search_dir}/output.fastq.gz.bam
+# -q INT   minimum mapping quality [0]
+# -@ INT   number of BAM compression threads [0]
+# -S       input is SAM
+# -b       output BAM
+samtools sort ${Search_dir}/output.fastq.gz.bam -o ${Search_dir}/output.fastq.gz.sorted.bam
+samtools rmdup -s ${Search_dir}/output.fastq.gz.sorted.bam ${Search_dir}/output.fastq.gz.sorted.filt.bam #filter remove PCR duplicates
+
+rm -f ${Search_dir}/*.gz.bam
+rm -f ${Search_dir}/*.gz.sam
+rm -f ${Search_dir}/*.gz.sorted.bam
+rm -f ${Search_dir}/*K4.fastq.gz
+
+
+###########################
+# Bam to bedgraph
+## bedtools genomecov (input is BAM) computes histograms (default), per-base reports (-d) 
+#and BEDGRAPH (-bg) summaries of feature coverage (e.g., aligned sequences) for a given genome.
+
+
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+
+#########running this script in UCSC directory where the bedgraphtoWig command located
+module unload gcc/4.7.0
+module load gcc/4.4
+module load bedtools/2.17.0
+module load macs/2.1.0.20160215
+
+Bowtie2index_files=/ifs/home/co635/Ref/Bowtie2Index_v8.5/hsal_genome_v8.5_bowtie2
+#gen="/ifs/home/oo386/EEDmt20/bam/Bowtie2Index/Hsa"
+
+
+#making chromosome sizes
+pip install pyfaidx
+faidx /ifs/home/co635/Ref/hsal_v8.5.fasta -i chromsizes > /ifs/home/co635/Ref/Hsa_v8.5.chrom.sizes
+
+chr=/ifs/home/co635/Ref/Hsa_v8.5.chrom.sizes
+#chr="/ifs/home/oo386/EEDmt20/bam/Hsa.chrom.sizes"
+
+totreads[1]=29085546  # total reads got from Bowtie2 Error Output
+totreads[2]=22059190
+totreads[3]=14840398
+totreads[4]=16993384
+
+sample[1]=WG_FB_K4tri
+sample[2]=WG_FB_K4tri
+sample[3]=WG_FB_Input1
+sample[4]=WG_FB_Input2
+
+normalizeby=10000000
+
+
+#for i in `seq 1 4`
+#do
+######change the dir
+i=4
+inp_bam="/ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-4/output.fastq.gz.sorted.filt.bam"
+out_dir_bam="/ifs/home/co635/ChIPseq/Cut_Run/H3K4me3_IP/TE-4/"
+######
+#inp_bam="/ifs/home/oo386/EEDmt20/bam/OO_"$i".fastq.gz_filt.bam"
+#calculate RPKM
+multiply=`awk 'BEGIN{ print '"$normalizeby"' / '"${totreads[i]}"'}'`
+
+bedtools genomecov -bg -scale $multiply -ibam $inp_bam -g $gen > ${out_dir_bam}OO_"$i".bedGraph
+sort -k1,1 -k2,2n ${out_dir_bam}OO_"$i".bedGraph > ${out_dir_bam}OO_"$i"_sorted.bedGraph
+
+./bedGraphToBigWig ${out_dir_bam}OO_"$i"_sorted.bedGraph $chr ${out_dir_bam}${sample[i]}.bw
+rm -rf ${out_dir_bam}OO_"$i".bedGraph
+rm -rf ${out_dir_bam}OO_"$i"_sorted.bedGraph
+
+#bedGraphToBigWig OO_"$i"_sorted.bedGraph $chr ./BW/""${sample[i]}".bw"
+# badGraphToBigWig command is not found
+#install packages in terminal
+#### wget --no-check-certificate https://raw.githubusercontent.com/daler/metaseq/master/create-metaseq-test-environment.sh
+#### bash create-metaseq-test-environment.sh
+#Download the meta.sh file to my cluster
+#Execute the file
+#Bedtools installed
+# Paste the below (tail) command into another terminal window
+#### tail -f /ifs/home/co635/tools/logs/bedtools-installation.log
+#samtools installed
+#tabix installed
+#ucsc installed
+#### tail -f /ifs/home/co635/tools/logs/miniconda-environment-installation.log
+# To activate this environment, use:
+# > source activate metaseq-test
+#
+# To deactivate an active environment, use:
+# > source deactivate
+#
+rm -rf OO_"$i".bedGraph
+rm -rf OO_"$i"_sorted.bedGraph
+
+done
