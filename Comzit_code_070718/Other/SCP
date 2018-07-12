@@ -1,0 +1,6 @@
+scp co635@phoenix.med.nyu.edu:/ifs/home/co635/Ref/hg19_STAR_index/STAR_hg19_Hsal/hg19_HsalLog.final.out Downloads/hg19_HsalLog.final.out
+scp Downloads/*.gz co635@phoenix.med.nyu.edu:GM_RNAseq/Brain/Day10
+
+scp co635@phoenix.med.nyu.edu:/ifs/home/co635/RNAseq/*.csv Downloads/csv_files/
+scp co635@phoenix.med.nyu.edu:/ifs/home/co635/RNAseq/*.png Downloads/png\ files/
+

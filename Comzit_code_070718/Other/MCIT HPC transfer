@@ -1,0 +1,21 @@
+1. ssh co635@hpc-vm0.med.nyu.edu 
+from the same machine you are using to login to phoenix.
+
+2. mount /home/co635/mnt/research-cifs.nyumc.org/Research/reinberglab
+you will be asked to login. Your kerberosID and password would work there.
+
+3. cd /home/co635/mnt/research-cifs.nyumc.org/Research/reinberglab
+and you should be able to see your files on research isilon.
+
+4. you can transfer files between this directory and your files on phoenix (/ifs/home/co635; /ifs/data/reiberglab; …) by simple cp/rsync command.
+
+[co635@hpc-vm0] $ cp /ifs/home/co635/RNAseq/* .
+[co635@hpc-vm0 homes]$ cp co635/Deep\ sequencing/RNAseq/032818_W_G_RG/Bam_files/Centra* /ifs/home/co635/RNAseq/Bam_files_Brain
+
+[co635@hpc-vm0 homes]$ cp -R /ifs/home/co635/RNAseq/GM_RNAseq/180110_fastaFiles_FromNikos\ /* fasta/
+
+Let me know if there is any problem. 
+
+Ali Siavosh-Haghighi, PhD
+HPC System Administrator, High-Performance Computing
+

@@ -1,0 +1,4 @@
+# on HPC
+smbclient -U co635 //research-cifs.nyumc.org/
+
+mount -t smbfs //co635@research-cifs.nyumc.org/Research/reinberglab .

@@ -1,0 +1,5 @@
+
+
+up_2fold <- fi_com[which(fi_com[,3]>=1 & fi_com[,6]<0.05)]
+
+length(which(up_nic[,1]==up_2fold_com[,2]]

@@ -1,0 +1,13 @@
+$tar -czvf name-of-archive.tar.gz /path/to/directory-or-file
+#-c: Create an archive.
+#-z: Compress the archive with gzip.
+#-v: Display progress in the terminal while creating the archive, also known as “verbose” mode. The v is always optional in these commands, but it’s helpful.
+#-f: Allows you to specify the filename of the archive.
+#-x: extract an archive
+
+$tar -czvf exonGeTrInfo.tab.tar.gz /ifs/home/co635/Ref/hg19_STAR_index/exonGeTrInfo.tab
+
+tar -xzvf /ifs/home/co635/Ref/hg19_STAR_index/tar-archive-name.tar.gz
+
+#zip whole directory
+tar -zcvf db_NR.tar.gz db_NR

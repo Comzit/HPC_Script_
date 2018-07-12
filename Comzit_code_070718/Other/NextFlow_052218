@@ -1,0 +1,60 @@
+ 
+ ###Next Flow tutorial page
+ #
+ https://www.nextflow.io/docs/latest/getstarted.html
+ #
+  950  05/22/2018 10:04:05 rm -r Modules/
+  951  05/22/2018 10:04:36 ll
+  956  05/22/2018 10:05:53 more .bashrc
+  957  05/22/2018 10:06:19 emacs .bashrc
+#### .bashrc
+
+ # .bashrc                                                                                          
+
+# Source global definitions                                                                        
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+# User specific aliases and functions                                                              
+module use /ifs/home/co635/modulefiles
+
+#### .bashrc
+  
+  959  05/22/2018 10:07:05 exec bash
+  960  05/22/2018 10:07:10 rm -r Modules/
+  961  05/22/2018 10:10:01 cd programs/
+  964  05/22/2018 10:11:05 module load java/1.8
+  965  05/22/2018 10:11:08 wget -qO- https://get.nextflow.io | bash
+  967  05/22/2018 10:13:41 mkdir nextflow
+  982  05/22/2018 10:14:59 mkdir 0.29.1
+  983  05/22/2018 10:15:06 mv nextflow 0.29.1/
+  984  05/22/2018 10:15:09 cd 0.29.1/
+  995  05/22/2018 10:16:43 emacs 0.29.1
+  996  05/22/2018 10:26:03 emacs .bashsc
+  998  05/22/2018 10:26:24 cd
+  999  05/22/2018 10:26:29 emacs .bashrc
+ 1000  05/22/2018 10:27:04 exec bash
+ 1001  05/22/2018 10:27:13 module avail
+ 1002  05/22/2018 10:27:38 module load nextflow/0.29.1 
+ 1003  05/22/2018 10:28:49 ll
+ 1004  05/22/2018 10:29:06 mkdir tutorial
+ 1005  05/22/2018 10:29:08 cd tutorial/
+ 1006  05/22/2018 10:29:20 emacs tutorial.nf
+ 1007  05/22/2018 10:30:40 nextflow run tutorial.nf 
+ 1008  05/22/2018 10:36:53 ll
+ 1009  05/22/2018 10:36:58 cd work
+ 1010  05/22/2018 10:37:02 ll
+ 1011  05/22/2018 10:37:19 cd 97
+ 1012  05/22/2018 10:37:21 ll
+ 1013  05/22/2018 10:37:26 cd fa97d3c19fee4e6775f33b2233617a/
+ 1014  05/22/2018 10:37:27 ll
+ 1015  05/22/2018 10:38:02 more chunk_ab 
+ 1016  05/22/2018 10:38:31 cd ..
+ 1017  05/22/2018 10:38:38 rm work/
+ 1018  05/22/2018 10:38:46 ll
+ 1019  05/22/2018 10:40:09 emacs tutorial.nf 
+ 1020  05/22/2018 10:41:00 nextflow run tutorial.nf -resume
+ 1021  05/22/2018 10:42:39 emacs tutorial.nf 
+ 1022  05/22/2018 10:43:14 nextflow run tutorial.nf --str "Hola mundo"
+ 1023  05/22/2018 10:57:58 history

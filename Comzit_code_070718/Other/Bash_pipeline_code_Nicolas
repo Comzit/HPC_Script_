@@ -1,0 +1,29 @@
+#download and scp Environment Modules (creating module)
+#https://sourceforge.net/projects/modules/?source=typ_redirect
+cd modules-4.1.2/
+more INSTALL.txt 
+
+#download and install the runtest from dejagnu
+mkdir programs
+wget https://ftp.gnu.org/gnu/dejagnu/dejagnu-1.6.1.tar.gz
+tar -xvzf dejagnu-1.6.1.tar.gz 
+./configure --prefix=$HOME/programs/dejagnu-1.6.1
+make
+make install
+
+
+
+#download and install TCL8.6.8 (tcl)
+https://www.tcl.tk/software/tcltk/download.html
+scp to programs dir
+tar -xvzf tcl8.6.8-src.tar.gz
+[co635@node009 unix]$ ./configure --prefix=$HOME/programs/tcl8.6.8
+make
+make install
+
+
+# go back to module install the modules
+
+./configure --prefix=$HOME/Modules/modules-4.1.2
+make
+make install

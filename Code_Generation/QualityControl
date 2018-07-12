@@ -1,2 +1,22 @@
+###########Single_end######
+
+#QC_.conf file generating
 ls *fastq | xargs -I{} echo $PWD/{} > /ifs/home/co635/scripts_to_submit/quality_control/test.conf
 
+#quality filtering .conf file
+#ls *fastq | xargs -I{} echo $PWD/{}\;80\;25 > /ifs/home/descon01/scripts_to_submit/qc_filtering/test.conf
+ls *fastq | xargs -I{} echo $PWD/{}\;80\;25 > /ifs/home/co635/scripts_to_submit/qc_filtering/test.conf
+
+
+
+
+###paired-end####
+###manual script to generating .conf file for pair-end qsub.########
+paired1 <- c()
+paired2<- c()
+percent <- 80
+qual <- 25
+
+to_write <- paste(paired1, paired2, percent, qual, sep=";")
+
+write(to_write, file="myfile.conf", ncolumns=1)
