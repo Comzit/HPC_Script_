@@ -1,0 +1,159 @@
+Source: http://singmann.org/installing-r-devel-on-linux/
+
+
+Before submitting an R package to CRAN the CRAN policies require that a package runs R CMD check --as-cran without any warnings or notes. More specifically, the policies demand that “[t]his should be done with the current version of R-devel”.  Previously I have done this on Windows, but even with the latest R-devel there are always issues that just do not pop up there (e.g., checking of URLs). Consequently, I have recently (finally) switched to Linux. But as a total Linux noob setting up R-devel was not trivial. This post shows how to set up R-devel next to the latest regular R and how to use it to test packages.
+
+To install R-devel you first need to make sure you are able to install R, R-packages, and have a working LaTeX installation (e.g., texlive). Please follow the instructions here: https://cran.rstudio.com/bin/linux/ubuntu/README
+
+Then you will also need subversion (for getting the latest source) and I also needed to install xorg (in case you get some unexpected errors it may be necessary to also install the suggestions given here):
+
+    sudo apt-get install subversion ccache
+    sudo apt-get install xorg-dev
+
+Now you need to get a current version of the source code via svn (i.e., subversion). For this, first create a folder svn in your home directory, change to this directory, and then checkout the latest version of the source code.
+
+    cd ~
+    mkdir svn
+    cd svn
+    svn co https://svn.r-project.org/R/trunk r-devel/R
+
+You also need to download and link the recommended packages for using them in R CMD check as described in the R installation manual (this needs to happen in the correct folder).
+
+    cd r-devel/R/
+    bash ./tools/rsync-recommended
+    bash ./tools/link-recommended
+
+Following a comment from Martin Maechler we do not build R in the svn directory, but rather in a newly created build directory:
+
+    mkdir ~/svn/R-devel-build
+
+Next you need to build R-devel, preferably in a different location then your usual R installation. We do this with a script courtesy of Dirk Eddelbuettel (which I changed so it uses the correct path and --with-recommended-packages). Simply create a new file build-R-devel with the following content. It makes a lot of sense to put this file in a location that is in the $PATH, I recommend /usr/local/bin (which requires root/sudo). At the end of this, we automatically run make install which we also add to the script (which is in contrast to the recommendations of Martin Macheler from above, but it works just fine).
+
+    ## ~/bin/build-R-devel
+    #!/bin/sh
+    cd ~/svn/R-devel-build
+    # R_PAPERSIZE=letter                \
+    # R_BATCHSAVE="--no-save --no-restore"         \
+    # R_BROWSER=xdg-open                \
+    # PAGER=/usr/bin/pager                \
+    # PERL=/usr/bin/perl                \
+    # R_UNZIPCMD=/usr/bin/unzip            \
+    # R_ZIPCMD=/usr/bin/zip                \
+    # R_PRINTCMD=/usr/bin/lpr                \
+    # LIBnn=lib                    \
+    # AWK=/usr/bin/awk                                \
+    # CC="ccache gcc"                    \
+    # CFLAGS="-ggdb -pipe -std=gnu99 -Wall -pedantic -DTESTING_WRITE_BARRIER" \
+    # CXX="ccache g++"                \
+    # CXXFLAGS="-ggdb -std=c++0x -pipe -Wall -pedantic" \
+    # FC="ccache gfortran"                \
+    # FCFLAGS="-ggdb -pipe -Wall -pedantic"        \
+    # F77="ccache gfortran"                \
+    # FFLAGS="-ggdb -pipe -Wall -pedantic"        \
+    # MAKE="make -j4"                    \
+    # ./configure                     \
+    #     --prefix=/usr/local/lib/R-devel         \
+    #     --enable-R-shlib                 \
+    #     --enable-strict-barrier             \
+    #     --with-blas                 \
+    #     --with-lapack                 \
+    #     --with-readline                 \
+    #     --without-recommended-packages
+    R_PAPERSIZE=letter                \
+    R_BATCHSAVE="--no-save --no-restore"         \
+    R_BROWSER=xdg-open                \
+    PAGER=/usr/bin/pager                \
+    PERL=/usr/bin/perl                \
+    R_UNZIPCMD=/usr/bin/unzip            \
+    R_ZIPCMD=/usr/bin/zip                \
+    R_PRINTCMD=/usr/bin/lpr                \
+    LIBnn=lib                    \
+    AWK=/usr/bin/awk                                \
+    CC="ccache gcc"                    \
+    CFLAGS="-ggdb -pipe -std=gnu99 -Wall -pedantic" \
+    CXX="ccache g++"                \
+    CXXFLAGS="-ggdb -pipe -Wall -pedantic"         \
+    FC="ccache gfortran"                   \
+    F77="ccache gfortran"                \
+    MAKE="make -j4"                    \
+    ../r-devel/R/configure                     \
+        --prefix=/usr/local/lib/R-devel         \
+        --enable-R-shlib                 \
+        --with-blas                 \
+        --with-lapack                 \
+        --with-readline                 \
+        --without-recommended-packages
+    #CC="clang -O3"                                  \
+    #CXX="clang++ -03"                \
+    #make svnonly
+    make 
+    echo "*** Done -- now run 'make install'"
+    make install
+    echo "*** All Done -- start R-devel with 'bash R-devel'"
+
+Next, you need to install R-devel using this script which automatically changes to the correct directory. Note that this step requires sudo.
+
+    sudo bash build-R-devel
+
+Now we only need a custom run script to actually run R-devel. Again this script is based on one written by Dirk Eddelbuettel and it should also be in a folder which is in the path such as /usr/local/bin. Note that we need to export the local library path for this installation as well. Below this is ~/R/x86_64-pc-linux-gnu-library/3.5, but this might need updating depending on your setup.
+
+    ## ~/bin/R-devel.sh
+    #!/bin/bash
+    export R_LIBS_SITE=${R_LIBS_SITE-'/usr/local/lib/R-devel/lib/R/library:~/R/x86_64-pc-linux-gnu-library/3.5'}
+    export PATH="/usr/local/lib/R-devel/bin:$PATH"
+    R "$@"
+
+To finally run R-devel simply call it as a script: bash R-devel
+It should show you that it is the current development version: R Under development (unstable) (CURRENT DATE)
+As this is a vanilla version of R, you will have to install all the packages you need.
+
+The R-devel script can also be used to build or check your package:
+
+    bash R-devel CMD build your-package-directory
+    bash R-devel CMD check --as-cran your-package.tar.gz
+
+Once all this is set up, the steps of updating your R-devel installation to the latest version only involves calling the scripts in the right order:
+
+    cd ~/svn/r-devel/R
+    svn update
+    bash ./tools/rsync-recommended
+    bash ./tools/link-recommended
+    sudo bash build-R-devel
+
+After doing so, it is probably a good idea to update the packages:
+
+    bash R-devel
+    update.packages(ask=FALSE)
+    
+    
+    
+    
+    
+    
+    
+    
+    ############ if sync does not work:
+    
+    I) Problem of ‘connection time out’ when doing bash ./tools/rsync-recommended
+
+I have executed these commands instead:
+
+bash -x ./tools/rsync-recommended
+I took the the version info on the ‘rsync’ line which should output at the end.
+I did: wget -r -l1 –no-parent -A*.gz -nd -P src/library/Recommended https://CRAN.R-project.org/src/contrib/3.5.0/Recommended/
+
+II) sudo bash build-R-devel: got error ‘/usr/bin/install: cannot stat ‘NEWS.pdf’: No such file or directory’
+
+going to ~/svn/R-devel-build and typing ‘sudo make’
+got error message: ‘pdflatex’ is needed to make vignettes but is missing on your system.’
+
+do: ‘sudo apt-get install texlive-latex-base’
+do: ‘sudo apt-get install texlive-latex-extra’
+do: ‘sudo apt-get install texlive-fonts-extra’
+do: ‘sudo apt-get build-dep r-base’
+do: sudo make
+do: sudo make install
+
+bash R-devel worked.
+
+Hope this can help.

@@ -1,0 +1,5 @@
+sudo apt-get install compizconfig-settings-manager
+
+DISPLAY=:0 ccsm &
+
+don't see unity on the list, try this: sudo apt-get -f install && sudo apt-get --reinstall install unity

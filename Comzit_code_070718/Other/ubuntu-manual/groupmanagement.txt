@@ -1,0 +1,9 @@
+List members of a group:
+
+[descon01@phoenix2 ~]$ getent group reinberglabcluster | cut -d: -f4 |  tr ',' '\n'
+oo386
+descon01
+saldar01
+
+Add group on folder:
+chgrp group_name folder_name

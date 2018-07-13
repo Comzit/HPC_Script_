@@ -1,0 +1,17 @@
+
+create a new github repository:
+
+found at: https://www.youtube.com/watch?v=U1kXlahkwd4
+- create a new general project
+- create an empty R file
+- right click on the project, team -> share project
+- click use or create repository in parent folder 
+- hit create repository/finish (at this point it indicates NO-HEAD)
+- do team -> add to index
+- do a first commit (it should show master now)
+- go to window->show view -> git -> git repositories
+- go to the repository, right click remote: create remote and leave it to origin
+- click change and copy-paste the ssh address of the github repository
+- select ssh protocol and click finish
+- hit save and push
+- good now to commit and push as usual

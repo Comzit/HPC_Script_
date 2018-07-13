@@ -1,0 +1,7 @@
+this is probably due to statET. uninstall the plugin manually:
+
+- list first the ID of the plugins
+eclipse -application org.eclipse.equinox.p2.director -listInstalledRoots
+
+- then uninstall list of IDs from bottom to top
+eclipse -application org.eclipse.equinox.p2.director -uninstallIU **ID**

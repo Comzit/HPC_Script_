@@ -1,0 +1,46 @@
+ex On Phoenix (if the module command is already available):
+- mkdir -P modulefiles/bowtie
+- create module file 1.2.2 (see ex on github)
+- type: module use $HOME/modulefiles
+- echo $MODULEPATH
+
+
+
+
+
+
+-------------- if starting from scratch !! 'not tested fully' !!
+
+1. Download the program for creating modules:
+    - http://modules.sourceforge.net/
+    - copy on phoenix in Modules/src
+    - check if all functions required are intalled (in INSTALL.txt). below is the installation of 
+    missing packages on phoenix
+
+2. download and install runtest fron dejagnu:
+    - wget https://ftp.gnu.org/gnu/dejagnu/dejagnu-1.6.1.tar.gz
+    - tar -xvzf dejagnu-1.6.1.tar.gz 
+    - cd dejagnu-1.6.1/
+    - ./configure --prefix=$HOME/programs/dejagnu-1.6.1
+    - make
+    - make install
+
+3. Download and install latest version of tcl
+    - https://sourceforge.net/projects/tcl/files/Tcl/8.6.8/tcl8.6.8-src.tar.gz/download?use_mirror=iweb
+    - untar and go to the 'unix' directory
+    - type ./configure --prefix=/ifs/home/descon01/programs/tcl8.6.8/
+    - make then make install
+
+**** 4. Dowload and install the devel version of tcl
+    - https://rpmfind.net/linux/rpm2html/search.php?query=tcl-devel
+    - copy rpm source to specific folder on phoenix like 'programs'****
+    
+        
+4. go back to Modules/src/modules-4.1.2
+    - go to Modules
+    - mkdir modules-4.1.2
+    - cd src/modules-4.1.2/
+    - ./configure --prefix=$HOME/Modules/modules-4.1.2
+    - make
+    - make install
+

@@ -1,0 +1,4 @@
+if the job does not start: qstat -u \*
+
+to list the queues: qconf -sql
+

@@ -1,0 +1,34 @@
+-------------------- 
+To create a branch
+--------------------
+
+Go to Team > switch to > new branch
+
+enter the name and click finish
+
+
+-------------------- 
+To delete a branch
+--------------------
+
+Go to Team > Remote > Push… 
+
+from the menu. Select your repository, and click Next. 
+
+Under Remote ref to delete… ctrl+space and select your branch and click Add spec. 
+
+Then click Finish. This should delete the remote branch.
+
+
+Go to Team > switch to -> master
+Go to Team > Advanced > delete branch 
+
+
+-------------------- 
+To merge a branch
+--------------------
+
+go to team > switch to > master
+then team > merge
+select the branch to merge
+click finish

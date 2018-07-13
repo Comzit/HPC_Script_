@@ -1,0 +1,52 @@
+ Disseminating Data to the Public WWW
+
+Data that are suitable for dissemination to a world-wide public can be made available on the WWW directly from Phoenix. Every Phoenix user has their own user web directory at
+
+    /ifs/homewww/username/ 
+
+—any files and directories placed there are immediately accessible from both the MCIT network and the public Internet under the URL of (note the tilde ~):
+
+    http://www.hpc.med.nyu.edu/~username/ 
+
+(Note that HTTPS is not currently supported.)
+Warning: Because data on the public WWW are subject to indexing, caching, archiving, etc. any files placed in user web directories for however short a period of time have to be considered irretrievably published. Never place PHI in a user web directory.
+
+To place files (and directories as needed) in one’s user web directory, the files (and directories) have to
+
+    be copied or moved to the user web directory, and
+    have their permissions adjusted 
+
+
+
+as outlined below. Files and directories can be added to and removed from user web directory at any time.
+Side Note: Adjusting the permissions is necessary to allow the web server to serve the user web directory. Because user web directories are served via HTTP, the filesystem permissions that apply elsewhere on Phoenix will not work for public access to user web directories. It is therefore not possible to restrict access to data in a user web directory to a certain group of Phoenix users by assigning that group to files or directories. Any data in user web directories are always accessibly by anyone, world-wide.
+
+Try this: Placing data in user web directories works only while logged in to a headnode of Phoenix.
+
+    Make sure that the files (and directories, if any) you intend to disseminate via your user web directory do not contain any PHI or any other kind of data unsuitable for publication.
+    Copy or move the data in question:
+        To copy a single file from, say, your home directory, use a command of the following form:
+
+            cp --preserve=timestamps ~/filename /ifs/homewww/username/ 
+
+        To copy a whole directory tree named dirname with all its subdirectories (if any) and files from, say, your home directory, use:
+
+            cp --preserve=timestamps -r ~/dirname /ifs/homewww/username/ 
+
+        To move a single file or whole directory (tree) from, say, your home directory, for example because you are only interested in it being publicly accessible and don’t need it to be available for processing by batch jobs, use:
+
+            mv ~/filename /ifs/homewww/username/ 
+
+    Adjust the permissions to grant “others” (that is to say, everyone) read permission (and additionally traverse permission on directories, if any):
+        To adjust the permissions for a single file by the name of filename that has been copied or moved to the user web directory, use:
+
+            chmod -v o+r /ifs/homewww/username/filename 
+
+        To adjust the permissions of a whole directory (including its subdirectories and files, if any) by the name of dirname, use:
+
+            chmod -Rv o+rX /ifs/homewww/username/dirname 
+
+You can also create subdirectories in your user web directory using mkdir and copy or move files (or other directories) there. However, you will still have to adjust the permissions for the subdirectories thus created, as outlined above.
+
+Files (and directories) can be removed from user web directories with the usual rm (or rm -r) commands.
+Warning: Again, do not place PHI in a user web directory. It is every user’s individual responsibility to ensure compliance with this policy. If in doubt whether a certain file or dataset is allowed in a user web directory, the HPC administrators can help.

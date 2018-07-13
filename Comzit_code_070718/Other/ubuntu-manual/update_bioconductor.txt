@@ -1,0 +1,6 @@
+uninstall all versions of BiocInstaller: path.package("BiocInstaller")
+
+source("https://bioconductor.org/biocLite.R")
+
+biocLite()
+  

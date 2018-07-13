@@ -1,0 +1,29 @@
+# .bashrc                                                                                                                                                                                                                               
+
+# Source global definitions                                                                                                                                                                                                             
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+# User specific aliases and functions                                                                                                                                                                                                   
+alias checkmem='qstat -f -F mem_free,mem_token'
+
+module use /ifs/home/descon01/modulefiles
+
+#alias                                                                                                                                                                                                                                  
+alias ..='cd ../..'
+alias ...='cd ../../..'
+alias ....='cd ../../../..'
+alias .....='cd ../../../../..'
+alias sc='cd /ifs/home/descon01/scripts_to_submit'
+alias reinberglab='cd /ifs/data/sequence/results/reinberglab'
+alias an='cd /ifs/home/descon01/analysis'
+alias tracks='cd /ifs/data/sequence/results/external/reinberglab'
+
+#environment variable                                                                                                                                                                                                                   
+export PATH=$PATH:/ifs/home/descon01/cluster/otherPrograms/pigz-2.3.3/:/ifs/home/descon01/programs/hiddenDomains/:/usr/lib64/:/usr/bin/:$PATH
+export QLOGIN="qlogin -l mem_free=5G -l h_vmem=5G -l mem_token=5G"
+export QLOGIN2="qlogin -l mem_free=10G -l h_vmem=10G -l mem_token=10G"
+
+# added by Miniconda3 installer                                                                                                                                                                                                         
+export PATH="/ifs/home/descon01/programs/miniconda3/bin:$PATH"

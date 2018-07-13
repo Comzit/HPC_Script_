@@ -1,0 +1,5 @@
+import from github:
+
+* go to window -> show view -> other -> git -> git repositories
+* click the icon (top right) "clone a git repository and add the clone to this view"
+* follow instructions and click "import all existing projects"
