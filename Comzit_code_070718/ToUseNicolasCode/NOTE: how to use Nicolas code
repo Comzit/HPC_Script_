@@ -15,7 +15,7 @@ Step2. filtering bad-quality reads (qc_filtering) using NGSQCToolKit_v2.3.3. The
 	$ qsub qc_filtering.sh test.conf
 	#For .sh file, specify the number of fastq file on the line3 (#$ -t 1-10). This is for 10 input files.
 	#For .conf file, use the below command line to generate the test.conf file
-	# this .conf contains parameters filtering reads with score>25 and 80%.
+	# this .conf contains parameters filtering reads with quality score>25 and 80% lenght cutoff.
 	#### For single-end
 	$ ls *fastq | xargs -I{} echo $PWD/{}\;80\;25 > /ifs/home/co635/scripts_to_submit/qc_filtering/test.conf
 	#### for Pair-end fastq, this requires two input fastq files on each path.  
@@ -26,3 +26,18 @@ Step2. filtering bad-quality reads (qc_filtering) using NGSQCToolKit_v2.3.3. The
 	qual <- 25
 	to_write <- paste(paired1, paired2, percent, qual, sep=";")
 	write(to_write, file="myfile.conf", ncolumns=1)
+	
+	
+	
+	
+	#Tophat RNAseq
+	#Bowtie1 ChIPseq ANT
+	#STAR ant RNAseq
+	$ ls *fastq | xargs -I{} echo $PWD/{} > /ifs/home/co635/scripts_to_submit/alignment/bowtie_SE_unireads/mouse/test.conf
+	
+	qsub bowtie_SE_UR_submission.sh test.conf mm10 3
+
+	
+	alias command in emacs .bashrc
+	to excceucte/ reload the bashrc
+	do exec bash
